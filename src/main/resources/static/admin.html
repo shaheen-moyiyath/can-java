@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canteen Staff & Kitchen Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-orange-500 text-white w-9 h-9 rounded-xl flex items-center justify-center font-bold text-lg shadow">
+                    <i class="fa-solid fa-kitchen-set"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg text-white leading-tight">Canteen Admin Dashboard</h1>
+                    <p class="text-xs text-slate-400">Live Kitchen Tallies & Order Fulfillment</p>
+                </div>
+            </div>
+
+            <!-- Header Actions -->
+            <div class="flex items-center space-x-3">
+                <a href="/swagger-ui.html" target="_blank" class="text-xs text-slate-300 hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-slate-500 transition flex items-center gap-1">
+                    <i class="fa-solid fa-code text-xs"></i> Swagger API Docs
+                </a>
+                <a href="/" class="text-xs text-slate-300 hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-slate-500 transition flex items-center gap-1">
+                    <i class="fa-solid fa-arrow-left text-xs"></i> Student Portal
+                </a>
+                <div id="adminAuthIndicator"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+
+        <!-- AUTH GATE: When not logged in as Admin -->
+        <div id="adminAuthGate" class="max-w-md mx-auto bg-white rounded-2xl p-8 border border-slate-200 shadow-xl text-center hidden">
+            <div class="w-14 h-14 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h3 class="text-xl font-extrabold text-slate-900 mb-1">Canteen Staff Authentication</h3>
+            <p class="text-xs text-slate-500 mb-6">Enter administrator credentials to access the live kitchen dashboard and menu controls.</p>
+
+            <form onsubmit="handleAdminLogin(event)" class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Admin Username</label>
+                    <input type="text" id="adminUsername" required value="admin" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Admin Password</label>
+                    <input type="password" id="adminPassword" required value="admin123" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl shadow transition text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-right-to-bracket text-xs"></i> Enter Admin Portal
+                </button>
+            </form>
+            <div class="mt-4 text-xs text-slate-400 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                Default Credentials: <span class="font-mono font-bold text-slate-600">admin</span> / <span class="font-mono font-bold text-slate-600">admin123</span>
+            </div>
+        </div>
+
+        <!-- AUTHENTICATED ADMIN CONTENT -->
+        <div id="adminContent" class="space-y-8 hidden">
+
+            <!-- TOP BANNER & STATS CONTROLS -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-orange-600 bg-orange-50 px-2.5 py-0.5 rounded-md">Live Preparation Tally</span>
+                    <h2 class="text-2xl font-black text-slate-900 mt-1">Kitchen Meal Orders Breakdown</h2>
+                    <p class="text-xs text-slate-500">Real-time aggregate quantities needed for food procurement and cooking.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="date" id="selectedDateInput" onchange="loadAllAdminData()" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-300 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    <button onclick="loadAllAdminData()" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-rotate"></i> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECTION 1: LIVE KITCHEN TALLIES (Aggregated Dish Quantities) -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                        <i class="fa-solid fa-fire-burner text-orange-500"></i> Dishes To Prepare Today
+                    </h3>
+                    <span class="text-xs text-slate-400">Excludes cancelled orders</span>
+                </div>
+                
+                <div id="kitchenTalliesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- NAVIGATION TABS FOR LOWER SECTIONS -->
+            <div class="flex border-b border-slate-300 space-x-6 text-sm font-bold">
+                <button id="adminTabOrdersBtn" onclick="switchAdminSection('orders')" class="pb-3 border-b-2 border-orange-500 text-orange-600 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check"></i> Order Verification & Status
+                </button>
+                <button id="adminTabMenuBtn" onclick="switchAdminSection('menu')" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-book-open"></i> Menu Catalog Management
+                </button>
+                <button id="adminTabReportsBtn" onclick="switchAdminSection('reports')" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie"></i> Daily Analytics & Sales Report
+                </button>
+            </div>
+
+            <!-- SECTION 2: ORDER VERIFICATION TABLE -->
+            <div id="sectionOrders" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-slate-900 text-base">Incoming Counter Orders</h4>
+                        <p class="text-xs text-slate-500">Verify student identities and change order preparation statuses.</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 uppercase font-bold text-[11px] border-b border-slate-200">
+                            <tr>
+                                <th class="py-3 px-4">Order ID</th>
+                                <th class="py-3 px-4">Student Details</th>
+                                <th class="py-3 px-4">Ordered Items</th>
+                                <th class="py-3 px-4">Time</th>
+                                <th class="py-3 px-4">Total (₹)</th>
+                                <th class="py-3 px-4">Status</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody" class="divide-y divide-slate-100 font-medium">
+                            <!-- Orders populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION 3: MENU MANAGEMENT -->
+            <div id="sectionMenu" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h4 class="font-bold text-slate-900 text-base">Menu Items Catalog</h4>
+                        <p class="text-xs text-slate-500">Create new food offerings, update prices, or toggle daily availability.</p>
+                    </div>
+                    <button onclick="openMenuItemModal()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus text-xs"></i> Add New Dish
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 uppercase font-bold text-[11px] border-b border-slate-200">
+                            <tr>
+                                <th class="py-3 px-4">Item ID</th>
+                                <th class="py-3 px-4">Dish Name</th>
+                                <th class="py-3 px-4">Category</th>
+                                <th class="py-3 px-4">Price</th>
+                                <th class="py-3 px-4">Daily Availability</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="menuTableBody" class="divide-y divide-slate-100 font-medium">
+                            <!-- Menu items populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION 4: DAILY ANALYTICS & REPORTING -->
+            <div id="sectionReports" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h4 class="font-bold text-slate-900 text-base">Daily Order & Revenue Report</h4>
+                        <p class="text-xs text-slate-500">Comprehensive summary for archival, reconciliation, and meal audit.</p>
+                    </div>
+                    <button onclick="window.print()" class="text-xs font-semibold px-3 py-2 border border-slate-300 rounded-xl hover:bg-slate-50 flex items-center gap-1.5">
+                        <i class="fa-solid fa-print"></i> Print Report
+                    </button>
+                </div>
+
+                <!-- Metric Summary Cards -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div class="p-4 rounded-xl bg-orange-50 border border-orange-200">
+                        <p class="text-xs font-bold text-orange-600 uppercase">Total Orders</p>
+                        <p id="reportTotalOrders" class="text-2xl font-black text-slate-900 mt-1">0</p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+                        <p class="text-xs font-bold text-emerald-600 uppercase">Gross Revenue</p>
+                        <p id="reportTotalRevenue" class="text-2xl font-black text-emerald-700 mt-1">₹0.00</p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-sky-50 border border-sky-200">
+                        <p class="text-xs font-bold text-sky-600 uppercase">Completed Meals</p>
+                        <p id="reportCompletedOrders" class="text-2xl font-black text-sky-800 mt-1">0</p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-rose-50 border border-rose-200">
+                        <p class="text-xs font-bold text-rose-600 uppercase">Cancelled</p>
+                        <p id="reportCancelledOrders" class="text-2xl font-black text-rose-800 mt-1">0</p>
+                    </div>
+                </div>
+
+                <!-- Item-by-item breakdown -->
+                <h5 class="font-bold text-slate-900 text-sm mb-3">Item Popularity & Sales Summary</h5>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 uppercase font-bold text-[11px] border-b border-slate-200">
+                            <tr>
+                                <th class="py-3 px-4">Dish Name</th>
+                                <th class="py-3 px-4">Category</th>
+                                <th class="py-3 px-4">Quantity Sold</th>
+                                <th class="py-3 px-4">Revenue Generated (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody" class="divide-y divide-slate-100 font-medium">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- MenuItem Modal (Add / Edit) -->
+    <div id="menuItemModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeMenuItemModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 id="menuModalTitle" class="text-lg font-bold text-slate-900 mb-4">Add New Menu Dish</h3>
+
+            <form onsubmit="handleMenuItemSubmit(event)" class="space-y-4">
+                <input type="hidden" id="editItemId">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Dish Name</label>
+                    <input type="text" id="itemNameInput" required placeholder="e.g. Masala Dosa" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Category</label>
+                    <select id="itemCategoryInput" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white">
+                        <option value="Meals">Meals</option>
+                        <option value="Biryani">Biryani</option>
+                        <option value="Breakfast">Breakfast</option>
+                        <option value="Snacks">Snacks</option>
+                        <option value="Beverages">Beverages</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Price (₹)</label>
+                    <input type="number" step="0.50" min="1" id="itemPriceInput" required placeholder="e.g. 60.00" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Description</label>
+                    <textarea id="itemDescInput" rows="2" placeholder="Brief ingredients or preparation details..." class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="itemAvailableInput" checked class="w-4 h-4 text-orange-500 rounded focus:ring-orange-400">
+                    <label for="itemAvailableInput" class="text-xs font-bold text-slate-700">Available For Daily Orders</label>
+                </div>
+                <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl shadow transition text-sm">
+                    Save Menu Item
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+    <script>
+        function checkAdminAuth() {
+            const gate = document.getElementById('adminAuthGate');
+            const content = document.getElementById('adminContent');
+            const indicator = document.getElementById('adminAuthIndicator');
+
+            if (state.token && state.user && state.user.role === 'ADMIN') {
+                gate.classList.add('hidden');
+                content.classList.remove('hidden');
+                indicator.innerHTML = `
+                    <div class="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        <span class="text-xs font-bold text-slate-200">${state.user.fullName || state.user.username} (Admin)</span>
+                        <button onclick="logoutUser()" class="text-xs text-rose-400 hover:text-rose-300 font-bold ml-2">Logout</button>
+                    </div>
+                `;
+                return true;
+            } else {
+                gate.classList.remove('hidden');
+                content.classList.add('hidden');
+                indicator.innerHTML = ``;
+                return false;
+            }
+        }
+
+        async function handleAdminLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('adminUsername').value.trim();
+            const p = document.getElementById('adminPassword').value;
+            try {
+                const user = await loginUser(u, p);
+                if (user.role !== 'ADMIN') {
+                    alert('Access Denied: This account does not possess ADMIN privileges.');
+                    logoutUser();
+                    return;
+                }
+                checkAdminAuth();
+                loadAllAdminData();
+            } catch (err) {
+                alert(`Login Failed: ${err.message}`);
+            }
+        }
+
+        function switchAdminSection(section) {
+            const secOrders = document.getElementById('sectionOrders');
+            const secMenu = document.getElementById('sectionMenu');
+            const secReports = document.getElementById('sectionReports');
+
+            const tabOrders = document.getElementById('adminTabOrdersBtn');
+            const tabMenu = document.getElementById('adminTabMenuBtn');
+            const tabReports = document.getElementById('adminTabReportsBtn');
+
+            [secOrders, secMenu, secReports].forEach(s => s.classList.add('hidden'));
+            [tabOrders, tabMenu, tabReports].forEach(t => {
+                t.className = "pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-900 flex items-center gap-2";
+            });
+
+            if (section === 'orders') {
+                secOrders.classList.remove('hidden');
+                tabOrders.className = "pb-3 border-b-2 border-orange-500 text-orange-600 flex items-center gap-2";
+                loadOrdersData();
+            } else if (section === 'menu') {
+                secMenu.classList.remove('hidden');
+                tabMenu.className = "pb-3 border-b-2 border-orange-500 text-orange-600 flex items-center gap-2";
+                loadMenuData();
+            } else if (section === 'reports') {
+                secReports.classList.remove('hidden');
+                tabReports.className = "pb-3 border-b-2 border-orange-500 text-orange-600 flex items-center gap-2";
+                loadReportData();
+            }
+        }
+
+        async function loadAllAdminData() {
+            const date = document.getElementById('selectedDateInput').value;
+            await Promise.all([
+                loadTalliesData(date),
+                loadOrdersData(date),
+                loadMenuData(),
+                loadReportData(date)
+            ]);
+        }
+
+        async function loadTalliesData(date) {
+            try {
+                const tallies = await fetchKitchenTallies(date);
+                const grid = document.getElementById('kitchenTalliesGrid');
+                if (tallies.length === 0) {
+                    grid.innerHTML = `<p class="col-span-full text-slate-400 py-4 text-center">No orders placed yet for this date.</p>`;
+                    return;
+                }
+
+                grid.innerHTML = tallies.map(t => `
+                    <div class="tally-card bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-center">
+                        <span class="block text-2xl font-black ${t.total_quantity > 0 ? 'text-orange-600' : 'text-slate-400'}">${t.total_quantity || 0}</span>
+                        <span class="text-xs font-bold text-slate-700 mt-1 block truncate" title="${t.name || t.itemName}">${t.name || t.itemName}</span>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading kitchen tallies:', err);
+            }
+        }
+
+        async function loadOrdersData(date) {
+            try {
+                const orders = await fetchAdminOrders(date);
+                const tbody = document.getElementById('ordersTableBody');
+                if (orders.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400">No orders recorded for this date.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = orders.map(order => {
+                    const itemsText = (order.items || []).map(i => `${i.quantity}x ${i.item_name || i.itemName}`).join(', ');
+                    const time = new Date(order.created_at || order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                    return `
+                        <tr class="hover:bg-slate-50/70">
+                            <td class="py-3 px-4 font-bold text-slate-900">#${order.order_id || order.id}</td>
+                            <td class="py-3 px-4">
+                                <p class="font-bold text-slate-900">${order.student_name || order.studentName || 'Student'}</p>
+                                <p class="text-[11px] text-slate-400">ID: ${order.username || 'N/A'}</p>
+                            </td>
+                            <td class="py-3 px-4 max-w-xs truncate" title="${itemsText}">${itemsText}</td>
+                            <td class="py-3 px-4 text-slate-500">${time}</td>
+                            <td class="py-3 px-4 font-bold text-slate-900">₹${Number(order.total_amount || order.totalAmount).toFixed(2)}</td>
+                            <td class="py-3 px-4">
+                                <select onchange="handleStatusChange(${order.order_id || order.id}, this.value)" class="text-xs font-bold px-2 py-1 rounded-lg border border-slate-300 bg-white">
+                                    <option value="PENDING" ${order.status === 'PENDING' ? 'selected' : ''}>PENDING</option>
+                                    <option value="PREPARING" ${order.status === 'PREPARING' ? 'selected' : ''}>PREPARING</option>
+                                    <option value="COMPLETED" ${order.status === 'COMPLETED' ? 'selected' : ''}>COMPLETED</option>
+                                    <option value="CANCELLED" ${order.status === 'CANCELLED' ? 'selected' : ''}>CANCELLED</option>
+                                </select>
+                            </td>
+                            <td class="py-3 px-4 text-right">
+                                <span class="text-emerald-600 font-bold text-xs"><i class="fa-solid fa-check"></i> Verified</span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('Error loading orders:', err);
+            }
+        }
+
+        async function handleStatusChange(orderId, newStatus) {
+            try {
+                await updateOrderStatus(orderId, newStatus);
+                const date = document.getElementById('selectedDateInput').value;
+                loadTalliesData(date);
+            } catch (err) {
+                alert(`Failed to update status: ${err.message}`);
+            }
+        }
+
+        async function loadMenuData() {
+            try {
+                const items = await fetchMenu(true);
+                const tbody = document.getElementById('menuTableBody');
+                if (items.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-400">No menu items found.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = items.map(item => `
+                    <tr class="hover:bg-slate-50/70">
+                        <td class="py-3 px-4 font-bold text-slate-700">#${item.item_id || item.id}</td>
+                        <td class="py-3 px-4 font-bold text-slate-900">${item.name}</td>
+                        <td class="py-3 px-4"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px] font-semibold">${item.category}</span></td>
+                        <td class="py-3 px-4 font-bold text-slate-900">₹${Number(item.price).toFixed(2)}</td>
+                        <td class="py-3 px-4">
+                            <button onclick="handleToggleAvailability(${item.item_id || item.id}, ${!item.is_available})" class="px-2.5 py-1 rounded-full text-[11px] font-bold ${item.is_available ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                                ${item.is_available ? '<i class="fa-solid fa-check"></i> Available' : '<i class="fa-solid fa-xmark"></i> Disabled'}
+                            </button>
+                        </td>
+                        <td class="py-3 px-4 text-right space-x-2">
+                            <button onclick='handleEditMenuItem(${JSON.stringify(item)})' class="text-slate-600 hover:text-orange-600 font-bold"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="handleDeleteMenuItem(${item.item_id || item.id})" class="text-rose-500 hover:text-rose-700 font-bold ml-2"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading menu:', err);
+            }
+        }
+
+        async function handleToggleAvailability(id, nextVal) {
+            try {
+                await toggleMenuItemAvailability(id, nextVal);
+                loadMenuData();
+                loadTalliesData(document.getElementById('selectedDateInput').value);
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            }
+        }
+
+        async function handleDeleteMenuItem(id) {
+            if (!confirm('Are you sure you want to delete this menu item?')) return;
+            try {
+                await deleteMenuItem(id);
+                loadMenuData();
+            } catch (err) {
+                alert(`Failed to delete: ${err.message}`);
+            }
+        }
+
+        function openMenuItemModal(item = null) {
+            document.getElementById('menuItemModal').classList.remove('hidden');
+            if (item) {
+                document.getElementById('menuModalTitle').innerText = "Edit Menu Item";
+                document.getElementById('editItemId').value = item.item_id || item.id;
+                document.getElementById('itemNameInput').value = item.name;
+                document.getElementById('itemCategoryInput').value = item.category;
+                document.getElementById('itemPriceInput').value = item.price;
+                document.getElementById('itemDescInput').value = item.description || '';
+                document.getElementById('itemAvailableInput').checked = item.is_available;
+            } else {
+                document.getElementById('menuModalTitle').innerText = "Add New Menu Dish";
+                document.getElementById('editItemId').value = '';
+                document.getElementById('itemNameInput').value = '';
+                document.getElementById('itemCategoryInput').value = 'Meals';
+                document.getElementById('itemPriceInput').value = '';
+                document.getElementById('itemDescInput').value = '';
+                document.getElementById('itemAvailableInput').checked = true;
+            }
+        }
+
+        function closeMenuItemModal() {
+            document.getElementById('menuItemModal').classList.add('hidden');
+        }
+
+        function handleEditMenuItem(item) {
+            openMenuItemModal(item);
+        }
+
+        async function handleMenuItemSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('editItemId').value;
+            const payload = {
+                name: document.getElementById('itemNameInput').value.trim(),
+                category: document.getElementById('itemCategoryInput').value,
+                price: parseFloat(document.getElementById('itemPriceInput').value),
+                description: document.getElementById('itemDescInput').value.trim(),
+                is_available: document.getElementById('itemAvailableInput').checked
+            };
+
+            try {
+                if (id) {
+                    await updateMenuItem(id, payload);
+                } else {
+                    await createMenuItem(payload);
+                }
+                closeMenuItemModal();
+                loadMenuData();
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            }
+        }
+
+        async function loadReportData(date) {
+            try {
+                const report = await fetchDailyReport(date);
+                if (!report) return;
+
+                document.getElementById('reportTotalOrders').innerText = report.total_orders ?? report.totalOrders ?? 0;
+                document.getElementById('reportTotalRevenue').innerText = `₹${Number(report.total_revenue ?? report.totalRevenue ?? 0).toFixed(2)}`;
+                document.getElementById('reportCompletedOrders').innerText = report.completed_orders ?? report.completedOrders ?? 0;
+                document.getElementById('reportCancelledOrders').innerText = report.cancelled_orders ?? report.cancelledOrders ?? 0;
+
+                const tbody = document.getElementById('reportTableBody');
+                const breakdown = report.item_breakdown || report.itemBreakdown || [];
+
+                if (breakdown.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-400">No dish sales recorded for this date.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = breakdown.map(item => `
+                    <tr class="hover:bg-slate-50/70">
+                        <td class="py-3 px-4 font-bold text-slate-900">${item.item_name || item.itemName}</td>
+                        <td class="py-3 px-4"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px] font-semibold">${item.category}</span></td>
+                        <td class="py-3 px-4 font-bold text-orange-600">${item.quantity_sold || item.quantitySold} portions</td>
+                        <td class="py-3 px-4 font-bold text-slate-900">₹${Number(item.total_sales || item.totalSales).toFixed(2)}</td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading daily report:', err);
+            }
+        }
+
+        // Initialize Admin page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set default date to today YYYY-MM-DD
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('selectedDateInput').value = today;
+
+            if (checkAdminAuth()) {
+                loadAllAdminData();
+            }
+        });
+    </script>
+</body>
+</html>

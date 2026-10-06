@@ -1,0 +1,30 @@
+# Maven build output
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Local tools & downloads
+.tools/
+*.zip
+*.tar.gz
+
+# IDE and Editor files
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+.vscode/
+
+# Logs and temp files
+*.log
+*.tmp
+.DS_Store
+Thumbs.db

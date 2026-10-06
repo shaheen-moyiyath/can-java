@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Canteen Ordering System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-orange-500 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xl shadow">
+                    <i class="fa-solid fa-utensils"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg sm:text-xl text-slate-900 leading-tight">Amal College Canteen</h1>
+                    <p class="text-xs text-slate-500">Fast & Digital Campus Meal Orders</p>
+                </div>
+            </div>
+
+            <!-- Navigation Actions -->
+            <div class="flex items-center space-x-3">
+                <a href="/admin.html" class="text-xs sm:text-sm font-semibold text-slate-600 hover:text-orange-600 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-orange-300 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-lock text-xs"></i> Canteen Staff Portal
+                </a>
+                <div id="authActions" class="flex items-center space-x-2">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+        
+        <!-- Welcome Hero -->
+        <div class="bg-gradient-to-r from-orange-500 to-amber-600 text-white rounded-2xl p-6 sm:p-8 mb-8 shadow-md relative overflow-hidden">
+            <div class="relative z-10 max-w-2xl">
+                <span class="inline-block bg-orange-400 bg-opacity-40 text-orange-100 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">Daily Fresh Food</span>
+                <h2 class="text-2xl sm:text-4xl font-extrabold mb-2">Order Your Lunch In Seconds</h2>
+                <p class="text-orange-100 text-sm sm:text-base mb-4">Beat the morning queue! Select your favorite dishes in advance so canteen staff can prepare your meal with zero delay.</p>
+                <div class="flex items-center gap-4 text-xs font-medium text-orange-200">
+                    <span class="flex items-center gap-1"><i class="fa-solid fa-clock"></i> Lunch Window: 12:30 PM - 2:00 PM</span>
+                    <span class="flex items-center gap-1"><i class="fa-solid fa-shield-halved"></i> Contactless Counter Pickup</span>
+                </div>
+            </div>
+            <i class="fa-solid fa-bowl-rice text-white opacity-10 absolute -right-6 -bottom-8 text-9xl"></i>
+        </div>
+
+        <!-- Navigation Tabs: Menu vs Order History -->
+        <div class="flex border-b border-slate-200 mb-6 space-x-8">
+            <button id="tabMenuBtn" onclick="switchTab('menu')" class="pb-3 border-b-2 border-orange-500 font-bold text-orange-600 text-sm sm:text-base flex items-center gap-2">
+                <i class="fa-solid fa-bars-staggered"></i> Today's Menu
+            </button>
+            <button id="tabOrdersBtn" onclick="switchTab('orders')" class="pb-3 border-b-2 border-transparent font-medium text-slate-500 hover:text-slate-800 text-sm sm:text-base flex items-center gap-2">
+                <i class="fa-solid fa-receipt"></i> My Past Orders
+            </button>
+        </div>
+
+        <!-- TAB 1: MENU & CART VIEW -->
+        <div id="menuTabView" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left 8 Columns: Category Filter & Menu Grid -->
+            <div class="lg:col-span-8">
+                <!-- Category Filter Pills -->
+                <div class="flex flex-wrap gap-2 mb-6" id="categoryFilterContainer">
+                    <button onclick="filterCategory('ALL')" class="category-pill active bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-sm">All Dishes</button>
+                    <button onclick="filterCategory('Meals')" class="category-pill bg-white text-slate-700 hover:bg-slate-100 text-xs font-bold px-4 py-2 rounded-xl border border-slate-200 transition">Meals</button>
+                    <button onclick="filterCategory('Biryani')" class="category-pill bg-white text-slate-700 hover:bg-slate-100 text-xs font-bold px-4 py-2 rounded-xl border border-slate-200 transition">Biryani</button>
+                    <button onclick="filterCategory('Breakfast')" class="category-pill bg-white text-slate-700 hover:bg-slate-100 text-xs font-bold px-4 py-2 rounded-xl border border-slate-200 transition">Breakfast</button>
+                    <button onclick="filterCategory('Snacks')" class="category-pill bg-white text-slate-700 hover:bg-slate-100 text-xs font-bold px-4 py-2 rounded-xl border border-slate-200 transition">Snacks</button>
+                    <button onclick="filterCategory('Beverages')" class="category-pill bg-white text-slate-700 hover:bg-slate-100 text-xs font-bold px-4 py-2 rounded-xl border border-slate-200 transition">Beverages</button>
+                </div>
+
+                <!-- Menu Cards Grid -->
+                <div id="menuGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="col-span-full py-12 text-center text-slate-400">
+                        <i class="fa-solid fa-spinner fa-spin text-2xl text-orange-500 mb-2"></i>
+                        <p>Loading fresh dishes...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right 4 Columns: Interactive Order Cart -->
+            <div class="lg:col-span-4">
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm sticky top-24">
+                    <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                        <h3 class="font-bold text-slate-900 flex items-center gap-2 text-base">
+                            <i class="fa-solid fa-cart-shopping text-orange-500"></i> Current Order
+                        </h3>
+                        <span id="cartCountBadge" class="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-0.5 rounded-full">0 items</span>
+                    </div>
+
+                    <!-- Cart Item List -->
+                    <div id="cartItemsList" class="space-y-3 max-h-72 overflow-y-auto pr-1 mb-4">
+                        <p class="text-sm text-slate-400 text-center py-8">Your plate is empty.<br>Add items from the menu!</p>
+                    </div>
+
+                    <!-- Cart Total & Submit -->
+                    <div class="pt-4 border-t border-slate-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-sm text-slate-500 font-medium">Grand Total:</span>
+                            <span id="cartTotalAmount" class="text-2xl font-black text-slate-900">₹0.00</span>
+                        </div>
+                        <button id="checkoutBtn" onclick="handleCheckoutClick()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                            <span>Submit Order</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: ORDER HISTORY VIEW -->
+        <div id="ordersTabView" class="hidden">
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-900">My Order History</h3>
+                        <p class="text-xs text-slate-500">Real-time status tracking of all your canteen orders</p>
+                    </div>
+                    <button onclick="fetchOrderHistory()" class="text-xs font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 px-3 py-2 rounded-lg transition flex items-center gap-1">
+                        <i class="fa-solid fa-rotate"></i> Refresh
+                    </button>
+                </div>
+
+                <div id="orderHistoryList" class="space-y-4">
+                    <p class="text-sm text-slate-400 text-center py-8">No past orders found.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            <p class="font-medium text-slate-700">Amal College of Advanced Studies, Nilambur &bull; Department of Computer Science</p>
+            <p class="mt-1">Canteen Ordering System &bull; Pure Java Spring Boot 3 & Relational SQL Backend</p>
+        </div>
+    </footer>
+
+    <!-- Auth Modal (Login / Register) -->
+    <div id="authModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Toggle Auth Mode -->
+            <div class="flex rounded-xl bg-slate-100 p-1 mb-6">
+                <button id="modalTabLogin" onclick="setAuthMode('login')" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-white shadow-sm text-slate-900 transition">Sign In</button>
+                <button id="modalTabRegister" onclick="setAuthMode('register')" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-900 transition">Register</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Username / College ID</label>
+                    <input type="text" id="loginUsername" required placeholder="e.g. AZAYSCS043 or student1" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl shadow transition text-sm">
+                    Sign In to Order
+                </button>
+                <div class="text-center text-xs text-slate-500 pt-2">
+                    Default demo student: <code class="bg-slate-100 px-1 py-0.5 rounded font-mono">student1</code> / <code class="bg-slate-100 px-1 py-0.5 rounded font-mono">student123</code>
+                </div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" onsubmit="handleRegisterSubmit(event)" class="space-y-3 hidden">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Full Name</label>
+                    <input type="text" id="regFullName" required placeholder="e.g. Sainul Ashiqu N" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">College ID / Username</label>
+                    <input type="text" id="regUsername" required placeholder="e.g. AZAYSCS043" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Email</label>
+                    <input type="email" id="regEmail" required placeholder="name@student.college.edu" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+                    <input type="password" id="regPassword" required placeholder="At least 6 characters" minlength="6" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl shadow transition text-sm">
+                    Create Student Account
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- UI Controllers Script -->
+    <script src="app.js"></script>
+    <script>
+        let currentCategory = 'ALL';
+
+        function renderAuthActions() {
+            const container = document.getElementById('authActions');
+            if (state.user && state.token) {
+                container.innerHTML = `
+                    <div class="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-xl">
+                        <i class="fa-solid fa-user-graduate text-slate-600"></i>
+                        <span class="text-xs font-bold text-slate-800">${state.user.fullName || state.user.username}</span>
+                        <button onclick="logoutUser()" title="Logout" class="text-xs text-rose-600 hover:text-rose-800 ml-2 font-semibold">Logout</button>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <button onclick="openAuthModal('login')" class="text-xs sm:text-sm font-bold bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl shadow transition">
+                        Sign In / Register
+                    </button>
+                `;
+            }
+        }
+
+        function switchTab(tab) {
+            const menuTab = document.getElementById('menuTabView');
+            const ordersTab = document.getElementById('ordersTabView');
+            const menuBtn = document.getElementById('tabMenuBtn');
+            const ordersBtn = document.getElementById('tabOrdersBtn');
+
+            if (tab === 'menu') {
+                menuTab.classList.remove('hidden');
+                ordersTab.classList.add('hidden');
+                menuBtn.className = "pb-3 border-b-2 border-orange-500 font-bold text-orange-600 text-sm sm:text-base flex items-center gap-2";
+                ordersBtn.className = "pb-3 border-b-2 border-transparent font-medium text-slate-500 hover:text-slate-800 text-sm sm:text-base flex items-center gap-2";
+            } else {
+                if (!state.token) {
+                    openAuthModal('login');
+                    return;
+                }
+                menuTab.classList.add('hidden');
+                ordersTab.classList.remove('hidden');
+                ordersBtn.className = "pb-3 border-b-2 border-orange-500 font-bold text-orange-600 text-sm sm:text-base flex items-center gap-2";
+                menuBtn.className = "pb-3 border-b-2 border-transparent font-medium text-slate-500 hover:text-slate-800 text-sm sm:text-base flex items-center gap-2";
+                fetchOrderHistory();
+            }
+        }
+
+        function filterCategory(cat) {
+            currentCategory = cat;
+            document.querySelectorAll('.category-pill').forEach(btn => {
+                if (btn.innerText.includes(cat) || (cat === 'ALL' && btn.innerText.includes('All'))) {
+                    btn.className = "category-pill active bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-sm";
+                } else {
+                    btn.className = "category-pill bg-white text-slate-700 hover:bg-slate-100 text-xs font-bold px-4 py-2 rounded-xl border border-slate-200 transition";
+                }
+            });
+            renderMenuGrid();
+        }
+
+        function renderMenuGrid() {
+            const container = document.getElementById('menuGrid');
+            const filtered = currentCategory === 'ALL' 
+                ? state.menu 
+                : state.menu.filter(i => (i.category || '').toLowerCase() === currentCategory.toLowerCase());
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="col-span-full py-8 text-center text-slate-400">No dishes available in this category today.</p>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => `
+                <div class="menu-card bg-white p-5 border border-slate-200 rounded-2xl flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-700">${item.category || 'Special'}</span>
+                            <span class="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Available
+                            </span>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-base mb-1">${item.name}</h4>
+                        <p class="text-xs text-slate-500 leading-relaxed mb-4 line-clamp-2">${item.description || 'Delicious freshly prepared canteen special dish.'}</p>
+                    </div>
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+                        <span class="text-lg font-black text-slate-900">₹${Number(item.price).toFixed(2)}</span>
+                        <button onclick='addToCart(${JSON.stringify(item)})' class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-plus text-xs"></i> Add
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateCartUI() {
+            const list = document.getElementById('cartItemsList');
+            const totalEl = document.getElementById('cartTotalAmount');
+            const badge = document.getElementById('cartCountBadge');
+
+            const total = state.cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+            const totalCount = state.cart.reduce((sum, i) => sum + i.quantity, 0);
+
+            badge.innerText = `${totalCount} item${totalCount === 1 ? '' : 's'}`;
+            totalEl.innerText = `₹${total.toFixed(2)}`;
+
+            if (state.cart.length === 0) {
+                list.innerHTML = `<p class="text-sm text-slate-400 text-center py-8">Your plate is empty.<br>Add items from the menu!</p>`;
+                return;
+            }
+
+            list.innerHTML = state.cart.map(item => `
+                <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div class="flex-1 pr-2">
+                        <p class="font-bold text-xs text-slate-800">${item.name}</p>
+                        <p class="text-xs text-slate-500">₹${Number(item.price).toFixed(2)} each</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="updateCartQuantity(${item.item_id}, -1)" class="w-6 h-6 rounded-lg bg-white border border-slate-300 text-slate-600 font-bold hover:bg-slate-100 flex items-center justify-center text-xs">-</button>
+                        <span class="text-xs font-bold text-slate-800 w-4 text-center">${item.quantity}</span>
+                        <button onclick="updateCartQuantity(${item.item_id}, 1)" class="w-6 h-6 rounded-lg bg-white border border-slate-300 text-slate-600 font-bold hover:bg-slate-100 flex items-center justify-center text-xs">+</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function handleCheckoutClick() {
+            if (!state.token) {
+                openAuthModal('login');
+                return;
+            }
+            submitOrder();
+        }
+
+        function renderOrderHistory() {
+            const list = document.getElementById('orderHistoryList');
+            if (state.orders.length === 0) {
+                list.innerHTML = `<p class="text-sm text-slate-400 text-center py-8">You haven't placed any orders yet.</p>`;
+                return;
+            }
+
+            list.innerHTML = state.orders.map(order => {
+                let badgeClass = "badge-pending";
+                if (order.status === 'PREPARING') badgeClass = "badge-preparing";
+                else if (order.status === 'COMPLETED') badgeClass = "badge-completed";
+                else if (order.status === 'CANCELLED') badgeClass = "badge-cancelled";
+
+                const itemsSummary = (order.items || []).map(i => `${i.quantity}x ${i.item_name || i.itemName}`).join(', ');
+
+                return `
+                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                        <div>
+                            <div class="flex items-center gap-3 mb-1">
+                                <span class="font-extrabold text-slate-900 text-sm">Order #${order.order_id || order.id}</span>
+                                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full ${badgeClass}">${order.status}</span>
+                                <span class="text-xs text-slate-400">${new Date(order.created_at || order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                            <p class="text-xs text-slate-600 font-medium">${itemsSummary}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-base font-black text-slate-900">₹${Number(order.total_amount || order.totalAmount).toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Modal Controllers
+        function openAuthModal(mode = 'login') {
+            document.getElementById('authModal').classList.remove('hidden');
+            setAuthMode(mode);
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.add('hidden');
+        }
+
+        function setAuthMode(mode) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const tabLogin = document.getElementById('modalTabLogin');
+            const tabRegister = document.getElementById('modalTabRegister');
+
+            if (mode === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                tabLogin.className = "flex-1 py-1.5 text-xs font-bold rounded-lg bg-white shadow-sm text-slate-900 transition";
+                tabRegister.className = "flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-900 transition";
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                tabRegister.className = "flex-1 py-1.5 text-xs font-bold rounded-lg bg-white shadow-sm text-slate-900 transition";
+                tabLogin.className = "flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-900 transition";
+            }
+        }
+
+        async function handleLoginSubmit(e) {
+            e.preventDefault();
+            const u = document.getElementById('loginUsername').value.trim();
+            const p = document.getElementById('loginPassword').value;
+            try {
+                await loginUser(u, p);
+                closeAuthModal();
+                renderAuthActions();
+                alert(`Welcome back, ${state.user.fullName || state.user.username}!`);
+            } catch (err) {
+                alert(`Login Failed: ${err.message}`);
+            }
+        }
+
+        async function handleRegisterSubmit(e) {
+            e.preventDefault();
+            const fullName = document.getElementById('regFullName').value.trim();
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            try {
+                await registerUser(username, password, fullName, email);
+                closeAuthModal();
+                renderAuthActions();
+                alert(`Account created successfully! Welcome, ${state.user.fullName}!`);
+            } catch (err) {
+                alert(`Registration Failed: ${err.message}`);
+            }
+        }
+
+        // Initialize Page
+        document.addEventListener('DOMContentLoaded', async () => {
+            renderAuthActions();
+            try {
+                await fetchMenu();
+                renderMenuGrid();
+            } catch (e) {
+                console.error('Menu load error:', e);
+            }
+        });
+    </script>
+</body>
+</html>

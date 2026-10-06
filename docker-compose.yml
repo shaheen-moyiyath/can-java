@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # MySQL Database Service
+  mysql-db:
+    image: mysql:8.0
+    container_name: canteen-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: canteen_db
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_USER: canteen_user
+      MYSQL_PASSWORD: canteen_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./schema-mysql.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - canteen-network
+
+  # Spring Boot Backend API & Embedded Web UI
+  canteen-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: canteen-backend
+    restart: always
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: mysql
+      DB_HOST: mysql-db
+      DB_PORT: 3306
+      DB_NAME: canteen_db
+      DB_USER: canteen_user
+      DB_PASSWORD: canteen_password
+      APP_JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    ports:
+      - "8080:8080"
+    networks:
+      - canteen-network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  canteen-network:
+    driver: bridge

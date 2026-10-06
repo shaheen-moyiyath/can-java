@@ -1,0 +1,66 @@
+/* Canteen Ordering System Custom Styling */
+:root {
+  --primary: #f97316;
+  --primary-dark: #ea580c;
+  --secondary: #059669;
+  --dark: #0f172a;
+  --light: #f8fafc;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #f8fafc;
+  color: #1e293b;
+  margin: 0;
+  padding: 0;
+}
+
+.badge-pending {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.badge-preparing {
+  background-color: #e0f2fe;
+  color: #0284c7;
+}
+
+.badge-completed {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.badge-cancelled {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.tally-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tally-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.menu-card {
+  transition: all 0.2s ease;
+}
+
+.menu-card:hover {
+  border-color: #fdba74;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
